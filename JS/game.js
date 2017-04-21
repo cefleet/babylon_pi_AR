@@ -1,4 +1,9 @@
-//This will be moved when I get the grunt taskes started
+var game;
+window.addEventListener('DOMContentLoaded', function() {
+     game = new Game();
+     game.start();
+});
+
 var Game = function(){
 	this.canvas = document.getElementById('renderCanvas');
 	this.engine = new BABYLON.Engine(this.canvas, true);
@@ -8,6 +13,7 @@ var Game = function(){
 	this.sphere;
 	this.videoCanvas = document.createElement("canvas");
 	this.videoCanvas.id = 'jpgs';
+	
 	
 	this.loadImage = function loadImage() {
 		var ctx = this.videoCanvas.getContext('2d');
@@ -39,17 +45,6 @@ var Game = function(){
     	}
 	};
 
-	this.ajax = function(u,f){
-		var x=window.XMLHttpRequest?new XMLHttpRequest():new ActiveXObject('Microsoft.XMLHTTP');
-	    x.onreadystatechange=function(){
-    		if(x.readyState==4&&x.status==200){
-    	    	f(x.responseText)
-    	    }
-    	};
-    	x.open('GET',u,true);
-    	x.send(null)
-	};
-	
 	this.loopFunction = function(){
         if(this.keys.left == 1){
           scene.cameras[0].cameraRotation.y -= 0.001
@@ -201,8 +196,16 @@ var Game = function(){
 	}
 }
 
-var game;
-window.addEventListener('DOMContentLoaded', function() {
-     game = new Game();
-     game.start();
-});
+Game.Ajax = function(u,f){
+	var x=window.XMLHttpRequest?new XMLHttpRequest():new ActiveXObject('Microsoft.XMLHTTP');
+	x.onreadystatechange=function(){
+    	if(x.readyState==4&&x.status==200){
+    		if(x.responseText){
+    			console.log('I Should have a callback here')
+    			console.log(x.responseText)
+    		}
+    	}
+   	};
+    x.open('GET',u,true);
+    x.send(null) 
+}
