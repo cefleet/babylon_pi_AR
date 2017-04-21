@@ -8,6 +8,7 @@ var Game = function(){
 	this.sphere;
 	this.videoCanvas = document.createElement("canvas");
 	this.videoCanvas.id = 'jpgs';
+	
 	this.loadImage = function loadImage() {
 		var ctx = this.videoCanvas.getContext('2d');
         //Loading of the home test image - img1
@@ -89,36 +90,36 @@ var Game = function(){
 	}.bind(this);
 	
 	this.handleKeyDown = function(evt){
-		/*
+		
         if (evt.keyCode==65){//A
-          game.keys.left=1;
-          game.Controls.pressed('left');
+         this.keys.left=1;
+          this.Controls.pressed('left');
         }
         if (evt.keyCode==68){//D
-          game.keys.right=1;
-          game.Controls.pressed('right');
+          this.keys.right=1;
+          this.Controls.pressed('right');
         }
         if (evt.keyCode==32){
-          game.keys.fire = 1;
+          this.keys.fire = 1;
 
-        }*/
+        }
      }
 
     this.handleKeyUp = function(evt){
-    	/*
+    	
         if (evt.keyCode==65){
-          game.keys.left=0;
-          game.Controls.released('left');
+          this.keys.left=0;
+          this.Controls.released('left');
         }
         if (evt.keyCode==68){
-          game.keys.right=0;
-          game.Controls.released('right');
+          this.keys.right=0;
+          this.Controls.released('right');
         }
         if (evt.keyCode==32){
-          game.keys.fire = 0;
-          game.isFireing = false;
+          this.keys.fire = 0;
+          this.isFireing = false;
         }
-        */
+        
      }
      this.vecToLocal = function(vector, cam){
           var m = cam.getWorldMatrix();
@@ -192,10 +193,16 @@ var Game = function(){
 	this.start = function(){
 		//these may need bindings
 		this.engine.runRenderLoop(this.loopFunction);
-		window.addEventListener("keydown", this.handleKeyDown, false);
-     	window.addEventListener("keyup", this.handleKeyUp, false);
+		window.addEventListener("keydown", this.handleKeyDown.bind(this), false);
+     	window.addEventListener("keyup", this.handleKeyUp.bind(this), false);
      	window.addEventListener('resize', function() {
         	this.engine.resize();
       	});
 	}
 }
+
+var game;
+window.addEventListener('DOMContentLoaded', function() {
+     game = new Game();
+     game.start();
+});
