@@ -1,10 +1,10 @@
 module.exports = function(grunt) {
 
-    // 1. All configuration goes here 
+    // 1. All configuration goes here
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
 
-        concat: {   
+        concat: {
     		dist: {
         		src: [
         			'JS/main.js',
@@ -22,7 +22,7 @@ module.exports = function(grunt) {
 		},
 		watch: {
   			scripts: {
-    			files: ['JS/Game.js','JS/main.js','JSClasses/*.js'],
+    			files: ['JS/Game.js','JS/main.js','JS/JSClasses/*.js'],
     			tasks: ['concat','uglify'],
     			options: {
       				spawn: false,
