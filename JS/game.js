@@ -10,6 +10,12 @@ var Game = function(){
 	this.keys = {left:0,right:0,fire:0};
 	this.isFireing = false;
 	this.readyForData = true;
+
+	this.Motors = {
+		"motor1": new Game.Motor('motor1')
+	}
+
+	//This is going to be common to all AR Pi Games
 	this.get_data = function(){
 		this.readyForData = false;
 		new Game.Ajax('/data.json', function(data){
@@ -17,23 +23,37 @@ var Game = function(){
 			this.readyForData = true;
 		});
 	};
-	this.AjaxControls = {
-		pressed :function(direct){
-    		console.log(direct+' was pressed')
-    		new Game.Ajax('/pressed?dir='+direct, function(data){
-    	      //could do something with this in the future
-    			console.log(data)
-    		});
-   		},
-    	released : function(direct){
-    	    console.log(direct+' was pressed')
-    	    new Game.Ajax('/released?dir='+direct, function(data){
-    	      //could do something with this in the future
-    	      console.log(data)
-    	    });
-    	}
+
+	this.createScene = function() {
+          // create a basic BJS Scene object
+          var scene = new BABYLON.Scene(this.engine);
+          var cam = new Game.Camera('MainCam',scene);
+					this.arScreen = new Game.ARScreen(scene,cam);
+
+          // create a basic light, aiming 0,1,0 - meaning, to the sky
+          var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), scene);
+          this.sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
+          this.sphere.movingDir = 'up';
+          this.sphere.position.z = 60;
+
+					this.target = new Game.Overlay(scene, "target.png");
+
+        return scene;
+     };
+
+	this.scene = this.createScene();
+
+	this.start = function(){
+		//these may need bindings
+		this.engine.runRenderLoop(this.loopFunction);
+		window.addEventListener("keydown", this.handleKeyDown.bind(this), false);
+    window.addEventListener("keyup", this.handleKeyUp.bind(this), false);
+    window.addEventListener('resize', function() {
+    	this.engine.resize();
+    });
 	};
 
+	//Some stuff in here should be kinda of in a class
 	this.loopFunction = function(){
 				if(this.readyForData){
 					this.get_data()
@@ -74,38 +94,37 @@ var Game = function(){
 
 	}.bind(this);
 
+	//These should be moved to a class
 	this.handleKeyDown = function(evt){
-
         if (evt.keyCode==65){//A
          this.keys.left=1;
-          this.AjaxControls.pressed('left');
+          this.Motors.motor1.activated('positive');
         }
         if (evt.keyCode==68){//D
           this.keys.right=1;
-          this.AjaxControls.pressed('right');
+          this.Motors.motor1.activated('negative');
         }
         if (evt.keyCode==32){
           this.keys.fire = 1;
-
         }
      }
 
     this.handleKeyUp = function(evt){
-
         if (evt.keyCode==65){
           this.keys.left=0;
-          this.AjaxControls.released('left');
+          this.Motors.motor1.deactivated('positive');
         }
         if (evt.keyCode==68){
           this.keys.right=0;
-          this.AjaxControls.released('right');
+          this.Motors.motor1.deactivated('negative');
         }
         if (evt.keyCode==32){
           this.keys.fire = 0;
           this.isFireing = false;
         }
-
      }
+
+		 //These are kinda unique for this one game
      this.vecToLocal = function(vector, cam){
           var m = cam.getWorldMatrix();
           var v = BABYLON.Vector3.TransformCoordinates(vector, m);
@@ -133,34 +152,6 @@ var Game = function(){
             hit.pickedMesh.scaling.x += 0.5;
 	      }
     }
-
-	this.createScene = function() {
-          // create a basic BJS Scene object
-          var scene = new BABYLON.Scene(this.engine);
-          var cam = new Game.Camera('MainCam',scene);
-					this.arScreen = new Game.ARScreen(scene,cam);
-
-          // create a basic light, aiming 0,1,0 - meaning, to the sky
-          var light = new BABYLON.HemisphericLight('light1', new BABYLON.Vector3(0,1,0), scene);
-          this.sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
-          this.sphere.movingDir = 'up';
-          this.sphere.position.z = 60;
-
-					this.target = new Game.Overlay(scene, "target.png");
-
-        return scene;
-     };
-
-	this.scene = this.createScene();
-	this.start = function(){
-		//these may need bindings
-		this.engine.runRenderLoop(this.loopFunction);
-		window.addEventListener("keydown", this.handleKeyDown.bind(this), false);
-    window.addEventListener("keyup", this.handleKeyUp.bind(this), false);
-    window.addEventListener('resize', function() {
-    	this.engine.resize();
-    });
-	}
 }
 
 Game.ARScreen = function(scene, camera){
@@ -219,6 +210,40 @@ Game.Camera = function(name,scene){
   this.bCamera = new BABYLON.FreeCamera(name, new BABYLON.Vector3(0, 0,0), scene);
   this.bCamera.setTarget(BABYLON.Vector3.Zero());
   return this;
+}
+
+//Motors primarally send data to the sever.
+//Instead of being left or right it is positive or negative. That way the motors only are able to send
+Game.Motor = function(name){
+  this.name = name;
+  this.atEnd = {
+    positive:false,
+    negative:false
+  };
+  
+  this.activated = function(direction){
+    new Game.Ajax('/activated?motor='+name+'&dir='+direction, function(data){
+        //could do something with this in the future
+      console.log(data)
+    });
+  };
+
+  this.deactivated = function(direction){
+    new Game.Ajax('/deactivted?motor='+name+'&dir='+direction, function(data){
+        //could do something with this in the future
+      console.log(data)
+    });
+  };
+
+  this.checkEndStop = function(direction){
+    new Game.Ajax('/checkEndStop?motor='+name+'&dir='+direction, function(data){
+      if(data == 'false'){
+        this.atEnd[position] = false;
+      } else if (data == 'true') {
+        this.atEnd[position] = true;
+      }
+    });
+  }
 }
 
 Game.Overlay = function(scene, image){
