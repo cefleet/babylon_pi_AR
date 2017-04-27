@@ -5,10 +5,16 @@ from flask import Flask,send_file, request, make_response, jsonify, send_from_di
 import threading
 import numpy as np
 import time
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+from gpiozero import Motor, Button
 app = Flask(__name__, static_folder='static', static_url_path='')
 
-capture = None
-captureThread = None
+camera = PiCamera()
+camera.resolution = (640, 480)
+camera.framerate = 30
+capture = PiRGBArray(camera, size=(640, 480))
+
 image = None
 #######Setting Up GPIO zero items
 
@@ -185,8 +191,7 @@ def serve_data():
 
 
     #njpg = Image.fromarray(imgRGB)
-    #njpg = Image.fromarray(img3)button.when_pressed = say_hello
-#Here we need to have "ButtonsIsPressed from the gpiozero stuff"
+    #njpg = Image.fromarray(img3)
     #njpg.save(img_io, 'JPEG', quality=90)
 
     #normal image
@@ -273,6 +278,16 @@ def serve_marked_image():
     return response
 
 def loopingCamera():
+	global capture
+	global camera
+	global image
+	for frame in camera.capture_continuous(capture, format="bgr", use_video_port=True):
+	# grab the raw NumPy array representing the image, then initialize the timestamp
+	# and occupied/unoccupied text
+		image = frame.array
+		capture.truncate(0)
+
+def loopingCamera_no_pi():
     global capture
     global image
     while True:
@@ -306,7 +321,7 @@ if __name__ == '__main__':
     global capture
     global captureThread
     try:
-        capture = cv2.VideoCapture(0)
+        #capture = cv2.VideoCapture(0)
         captureThread = threading.Thread(target=loopingCamera, args=())
         captureThread.start()
         app.run(host='0.0.0.0')
